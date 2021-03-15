@@ -4,9 +4,11 @@ Bugout knowledge bases.
 """
 import atexit
 import concurrent.futures
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+import json
 import os
 import pkg_resources
+import tempfile
 import textwrap
 import time
 import traceback
@@ -86,6 +88,26 @@ class Reporter:
 
         return tags
 
+    def flush(
+        self, report: Report, path: Optional[str] = None, raise_on_failure: bool = False
+    ) -> Optional[str]:
+        """
+        Writes a report to the given path and returns the path if successful. Returns None if
+        unsuccessful and raise_on_failure is set to False, otherwise raises the exception.
+        """
+        if path is None:
+            fd, path = tempfile.mkstemp()
+            os.close(fd)
+        report_dict = asdict(report)
+        try:
+            with open(path, "w") as ofp:
+                json.dump(report_dict, ofp)
+        except:
+            if raise_on_failure:
+                raise
+            return None
+        return path
+
     def publish(self, report: Report, wait: bool = False) -> None:
         if not self.consent.check():
             return
@@ -122,7 +144,7 @@ class Reporter:
         title: str,
         content: str,
         tags: Optional[List[str]] = None,
-        publish: bool = True,
+        publish: bool = False,
         wait: bool = False,
     ) -> Report:
         """
@@ -137,7 +159,10 @@ class Reporter:
         return report
 
     def system_report(
-        self, tags: Optional[List[str]] = None, publish: bool = True, wait: bool = False
+        self,
+        tags: Optional[List[str]] = None,
+        publish: bool = False,
+        wait: bool = False,
     ) -> Report:
         title = "{}: System information".format(self.name)
         content = textwrap.dedent(
@@ -184,7 +209,7 @@ class Reporter:
         self,
         error: Exception,
         tags: Optional[List[str]] = None,
-        publish: bool = True,
+        publish: bool = False,
         wait: bool = False,
     ) -> Report:
         title = "{} - {}".format(self.name, type(error).__name__)
@@ -231,7 +256,7 @@ class Reporter:
         self,
         title: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        publish: bool = True,
+        publish: bool = False,
         wait: bool = False,
     ) -> Report:
         """
@@ -255,7 +280,7 @@ class Reporter:
         self,
         title: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        publish: bool = True,
+        publish: bool = False,
         wait: bool = False,
     ) -> Report:
         """
@@ -281,7 +306,7 @@ class Reporter:
         reports: List[Report],
         title: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        publish: bool = True,
+        publish: bool = False,
         wait: bool = False,
     ) -> Report:
         if tags is None:
