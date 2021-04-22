@@ -1,12 +1,14 @@
 from setuptools import find_packages, setup
 
+from infestor.version import INFESTOR_VERSION
+
 long_description = ""
 with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
     name="humbug-infestor",
-    version="0.0.1",
+    version=INFESTOR_VERSION,
     packages=find_packages(),
     install_requires=["atomicwrites", "bugout-locust", "humbug"],
     extras_require={

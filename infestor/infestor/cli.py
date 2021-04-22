@@ -12,12 +12,6 @@ def handle_init(args: argparse.Namespace) -> None:
     print("Done!")
 
 
-def handle_reporting(args: argparse.Namespace) -> None:
-    config_file = config.default_config_file(args.repository, create=False)
-    config.set_reporting_consent(config_file, args.consent == "on")
-    print(f"Turned reporting {args.consent}")
-
-
 def generate_argument_parser() -> argparse.ArgumentParser:
     current_working_directory = os.getcwd()
 
@@ -38,10 +32,6 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         help="Bugout reporter token. Get one by setting up an integration at https://bugout.dev/account/teams",
     )
     init_parser.set_defaults(func=handle_init)
-
-    reporting_parser = subcommands.add_parser("reporting")
-    reporting_parser.add_argument("consent", choices=["on", "off"])
-    reporting_parser.set_defaults(func=handle_reporting)
 
     return parser
 

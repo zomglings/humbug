@@ -6,12 +6,27 @@ import os
 from typing import Dict, Optional
 
 from atomicwrites import atomic_write
-from humbug.consent import HumbugConsent, yes, no
+from humbug.consent import HumbugConsent, environment_variable_opt_out, no
 from humbug.report import HumbugReporter
+
+from .version import INFESTOR_VERSION
+
+INFESTOR_REPORTING_TOKEN = "6ec64442-40e3-41ff-afe3-d818c023cd41"
+
+infestor_consent = HumbugConsent(
+    environment_variable_opt_out("INFESTOR_REPORTING_ENABLED", no)
+)
+
+infestor_reporter = HumbugReporter(
+    name=f"infestor",
+    consent=infestor_consent,
+    bugout_token=INFESTOR_REPORTING_TOKEN,
+)
 
 CONFIG_FILENAME = "infestor.json"
 REPORTER_TOKEN_KEY = "reporter_token"
-HUMBUG_CONSENT_KEY = "reporting_consent"
+
+infestor_tags = [f"version:{INFESTOR_VERSION}"]
 
 
 class ConfigurationError(Exception):
@@ -71,15 +86,6 @@ def set_reporter_token(config_file: str, reporter_token: str) -> None:
     save_config(config_file, config)
 
 
-def set_reporting_consent(config_file: str, reporting_consent: bool) -> None:
-    config = load_config(config_file, validate=False)
-    if reporting_consent:
-        config[HUMBUG_CONSENT_KEY] = yes[0]
-    else:
-        config[HUMBUG_CONSENT_KEY] = no[0]
-    save_config(config_file, config)
-
-
 def initialize(
     repository: Optional[str] = None,
     reporter_token: Optional[str] = None,
@@ -93,7 +99,7 @@ def initialize(
             f"Pre-existing infestor configuration found: {config_file}"
         )
 
-    config = {HUMBUG_CONSENT_KEY: yes[0]}
+    config = {}
     if reporter_token is not None:
         config[REPORTER_TOKEN_KEY] = reporter_token
 
