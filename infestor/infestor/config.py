@@ -80,10 +80,11 @@ def default_config_file(
     return config_file
 
 
-def set_reporter_token(config_file: str, reporter_token: str) -> None:
+def set_reporter_token(config_file: str, reporter_token: str) -> Dict[str, str]:
     config = load_config(config_file, validate=False)
     config[REPORTER_TOKEN_KEY] = reporter_token
     save_config(config_file, config)
+    return config
 
 
 def initialize(
