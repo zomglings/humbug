@@ -27,4 +27,5 @@ setup(
         "Topic :: Software Development :: Libraries",
     ],
     url="https://github.com/bugout-dev/humbug",
+    entry_points={"console_scripts": ["infestor=infestor.cli:main"]},
 )

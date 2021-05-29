@@ -51,6 +51,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         default=current_working_directory,
         help=f"Path to git repository containing your code base (default: {current_working_directory})",
     )
+    parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
 
     init_parser = subcommands.add_parser("init")

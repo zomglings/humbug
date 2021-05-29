@@ -6,7 +6,7 @@ import os
 from typing import Dict, Optional
 
 from atomicwrites import atomic_write
-from humbug.consent import HumbugConsent, environment_variable_opt_out, no
+from humbug.consent import HumbugConsent, environment_variable_opt_in, yes
 from humbug.report import HumbugReporter
 
 from .version import INFESTOR_VERSION
@@ -14,7 +14,7 @@ from .version import INFESTOR_VERSION
 INFESTOR_REPORTING_TOKEN = "6ec64442-40e3-41ff-afe3-d818c023cd41"
 
 infestor_consent = HumbugConsent(
-    environment_variable_opt_out("INFESTOR_REPORTING_ENABLED", no)
+    environment_variable_opt_in("INFESTOR_REPORTING_ENABLED", yes)
 )
 
 infestor_reporter = HumbugReporter(
@@ -75,6 +75,7 @@ def default_config_file(
         elif not os.path.isfile(config_file):
             raise ConfigurationError(f"Not a file: {config_file}")
         else:
+            # We load the file just to check that we have minimal access to it.
             load_config(config_file, validate=False)
 
     return config_file
