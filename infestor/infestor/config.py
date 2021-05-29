@@ -1,9 +1,10 @@
 """
 These are the tools infestor uses to set up a code base for automatic Humbug instrumentation.
 """
+from dataclasses import asdict, dataclass
 import json
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 from atomicwrites import atomic_write
 from humbug.consent import HumbugConsent, environment_variable_opt_in, yes
@@ -24,7 +25,19 @@ infestor_reporter = HumbugReporter(
 )
 
 CONFIG_FILENAME = "infestor.json"
+
+
+@dataclass
+class InfestorConfiguration:
+    python_root: str
+    relative_imports: bool = False
+    reporter_token: Optional[str] = None
+
+
 REPORTER_TOKEN_KEY = "reporter_token"
+PYTHON_ROOT_KEY = "python_root"
+RELATIVE_IMPORTS_KEY = "relative_imports"
+
 
 infestor_tags = [f"version:{INFESTOR_VERSION}"]
 
@@ -37,72 +50,107 @@ class ConfigurationError(Exception):
     pass
 
 
-def load_config(config_file: str, validate: bool = True) -> Dict[str, str]:
+def parse_config(
+    raw_config: Dict[str, str]
+) -> Tuple[InfestorConfiguration, List[str], List[str]]:
+    """
+    Checks if the given configuration is valid. If it is valid, returns (True, []) else returns
+    (False, [<warnings>, ...], [<error messages>, ...]).
+    """
+    warn_messages: List[str] = []
+    error_messages: List[str] = []
+
+    python_root: Optional[str] = raw_config.get(PYTHON_ROOT_KEY)
+    if python_root is None:
+        error_messages.append("No Python root directory specified")
+        python_root = ""
+
+    relative_imports: Optional[bool] = raw_config.get(RELATIVE_IMPORTS_KEY)
+    if relative_imports is None:
+        error_messages.append(
+            "Configuration does not specify whether or not to use relative imports"
+        )
+        relative_imports = False
+
+    reporter_token: Optional[str] = raw_config.get(REPORTER_TOKEN_KEY)
+    if reporter_token is None:
+        warn_messages.append("No reporter token found")
+
+    infestor_configuration = InfestorConfiguration(
+        python_root=python_root,
+        relative_imports=relative_imports,
+        reporter_token=reporter_token,
+    )
+
+    return (infestor_configuration, warn_messages, error_messages)
+
+
+def load_config(
+    config_file: str, print_warnings: bool = False
+) -> InfestorConfiguration:
     """
     Loads an infestor configuration from file and validates it.
     """
     try:
         with open(config_file, "r") as ifp:
-            config = json.load(ifp)
+            raw_config = json.load(ifp)
     except:
         raise ConfigurationError(f"Could not read configuration: {config_file}")
 
-    if validate:
-        if config.get(REPORTER_TOKEN_KEY) is not None:
-            raise ConfigurationError(
-                f"No reporter token found in configuration file: {config_file}"
-            )
+    configuration, warnings, errors = parse_config(raw_config)
 
-    return config
+    if print_warnings:
+        warning_items = "\n".join([f"- {warning}" for warning in warnings])
+        print(
+            f"Warnings when loading configuration file ({config_file}):\n{warning_items}"
+        )
+
+    if errors:
+        error_items = "\n".join([f"- {error}" for error in errors])
+        error_message = (
+            f"Errors loading configuration file ({config_file}):\n{error_items}"
+        )
+        raise ConfigurationError(error_message)
+
+    return configuration
 
 
-def save_config(config_file: str, config: Dict[str, str]) -> None:
+def save_config(config_file: str, configuration: InfestorConfiguration) -> None:
     with atomic_write(config_file, overwrite=True) as ofp:
-        json.dump(config, ofp)
+        json.dump(asdict(configuration), ofp)
 
 
-def default_config_file(
-    root_directory: Optional[str] = None, create: bool = False
-) -> str:
-    if root_directory is None:
-        root_directory = os.getcwd()
-
+def default_config_file(root_directory) -> str:
     config_file = os.path.join(root_directory, CONFIG_FILENAME)
-
-    if create:
-        if not os.path.exists(config_file):
-            save_config(config_file, {})
-        elif not os.path.isfile(config_file):
-            raise ConfigurationError(f"Not a file: {config_file}")
-        else:
-            # We load the file just to check that we have minimal access to it.
-            load_config(config_file, validate=False)
 
     return config_file
 
 
 def set_reporter_token(config_file: str, reporter_token: str) -> Dict[str, str]:
-    config = load_config(config_file, validate=False)
-    config[REPORTER_TOKEN_KEY] = reporter_token
+    config = load_config(config_file)
+    config.reporter_token = reporter_token
     save_config(config_file, config)
     return config
 
 
 def initialize(
-    repository: Optional[str] = None,
+    repository: str,
+    python_root: str,
+    relative_imports: bool = False,
     reporter_token: Optional[str] = None,
 ) -> None:
     """
     Initialize infestor in a given project.
     """
-    config_file = default_config_file(repository, create=False)
+    config_file = default_config_file(repository)
     if os.path.exists(config_file):
         raise ConfigurationError(
             f"Pre-existing infestor configuration found: {config_file}"
         )
 
-    config = {}
-    if reporter_token is not None:
-        config[REPORTER_TOKEN_KEY] = reporter_token
-
-    save_config(config_file, config)
+    configuration = InfestorConfiguration(
+        python_root=python_root,
+        relative_imports=relative_imports,
+        reporter_token=reporter_token,
+    )
+    save_config(config_file, configuration)
