@@ -2,16 +2,18 @@
 Command line interface for the Humbug infestor.
 """
 import argparse
-import json
 import os
-import sys
 
 from . import config
 
 
 def handle_init(args: argparse.Namespace) -> None:
     config.initialize(
-        args.repository, args.python_root, args.relative_imports, args.reporter_token
+        args.repository,
+        args.python_root,
+        args.name,
+        args.relative_imports,
+        args.reporter_token,
     )
     print("Infestor has been initialized for your repository.\n")
 
@@ -39,23 +41,18 @@ def handle_init(args: argparse.Namespace) -> None:
 
 def handle_validate(args: argparse.Namespace) -> None:
     config_file = config.default_config_file(args.repository)
-    infestor_config = config.load_config(config_file)
-    is_valid, warnings, errors = config.validate_config(infestor_config)
-    if warnings:
-        print(f"Warnings for configuration file: {config_file}:")
-        for warning in warnings:
-            print(f"- {warning}")
-    if errors:
-        print(f"Errors for configuration file: {config_file}:")
-        for error in errors:
-            print(f"- {error}")
-    if not is_valid:
-        sys.exit(1)
+    config.load_config(config_file, print_warnings=True)
 
 
 def handle_token(args: argparse.Namespace) -> None:
     config_file = config.default_config_file(args.repository)
-    config_object = config.set_reporter_token(config_file, args.token)
+    config_object = config.set_reporter_token(
+        config_file,
+        config.python_root_relative_to_repository_root(
+            args.repository, args.python_root
+        ),
+        args.token,
+    )
     print(config_object)
 
 
@@ -83,6 +80,12 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         ),
     )
     init_parser.add_argument(
+        "-n",
+        "--name",
+        required=True,
+        help="Name of project (to identify integration)",
+    )
+    init_parser.add_argument(
         "--relative-imports",
         action="store_true",
         help="Set this flags if infestor should add relative imports.",
@@ -99,6 +102,12 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     validate_parser.set_defaults(func=handle_validate)
 
     token_parser = subcommands.add_parser("token")
+    token_parser.add_argument(
+        "-P",
+        "--python-root",
+        required=True,
+        help="Root directory for Python code/module you want to register a token for (this is the relevant key in infestor.json)",
+    )
     token_parser.add_argument(
         "token", help="Reporting token generated from https://bugout.dev/account/teams"
     )
