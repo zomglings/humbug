@@ -10,6 +10,8 @@ from . import config
 class TestParseConfig(unittest.TestCase):
     maxDiff = None
 
+    # TODO(zomglings): Test reporter_filepath invalidities.
+
     def test_empty_config(self):
         raw_config = {}
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -24,6 +26,7 @@ class TestParseConfig(unittest.TestCase):
                 config.PROJECT_NAME_KEY: "lol",
                 config.RELATIVE_IMPORTS_KEY: False,
                 config.REPORTER_TOKEN_KEY: "335da960-2dc6-48b3-97a5-c23ac1495e7d",
+                config.REPORTER_FILEPATH_KEY: "report.py",
             }
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -37,6 +40,7 @@ class TestParseConfig(unittest.TestCase):
                 config.PYTHON_ROOT_KEY: "./rofl",
                 config.RELATIVE_IMPORTS_KEY: False,
                 config.REPORTER_TOKEN_KEY: "335da960-2dc6-48b3-97a5-c23ac1495e7d",
+                config.REPORTER_FILEPATH_KEY: "report.py",
             }
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -50,6 +54,7 @@ class TestParseConfig(unittest.TestCase):
                 config.PYTHON_ROOT_KEY: "./rofl",
                 config.PROJECT_NAME_KEY: "rofl",
                 config.REPORTER_TOKEN_KEY: "335da960-2dc6-48b3-97a5-c23ac1495e7d",
+                config.REPORTER_FILEPATH_KEY: "report.py",
             }
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -62,6 +67,7 @@ class TestParseConfig(unittest.TestCase):
             "./rofl": {
                 config.RELATIVE_IMPORTS_KEY: False,
                 config.REPORTER_TOKEN_KEY: "335da960-2dc6-48b3-97a5-c23ac1495e7d",
+                config.REPORTER_FILEPATH_KEY: "report.py",
             }
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -75,6 +81,7 @@ class TestParseConfig(unittest.TestCase):
             project_name="lol",
             relative_imports=False,
             reporter_token="335da960-2dc6-48b3-97a5-c23ac1495e7d",
+            reporter_filepath="report.py",
         )
         raw_config = {
             infestor_configuration.python_root: {
@@ -82,6 +89,7 @@ class TestParseConfig(unittest.TestCase):
                 config.PROJECT_NAME_KEY: infestor_configuration.project_name,
                 config.RELATIVE_IMPORTS_KEY: infestor_configuration.relative_imports,
                 config.REPORTER_TOKEN_KEY: infestor_configuration.reporter_token,
+                config.REPORTER_FILEPATH_KEY: infestor_configuration.reporter_filepath,
             }
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -97,12 +105,14 @@ class TestParseConfig(unittest.TestCase):
             project_name="lol",
             relative_imports=False,
             reporter_token="335da960-2dc6-48b3-97a5-c23ac1495e7d",
+            reporter_filepath="report.py",
         )
         infestor_configuration_1 = config.InfestorConfiguration(
             python_root="./rofl",
             project_name="rofl",
             relative_imports=False,
             reporter_token="435da960-2dc6-48b3-97a5-c23ac1495e7d",
+            reporter_filepath="report.py",
         )
 
         raw_config = {
@@ -111,12 +121,14 @@ class TestParseConfig(unittest.TestCase):
                 config.PROJECT_NAME_KEY: infestor_configuration_0.project_name,
                 config.RELATIVE_IMPORTS_KEY: infestor_configuration_0.relative_imports,
                 config.REPORTER_TOKEN_KEY: infestor_configuration_0.reporter_token,
+                config.REPORTER_FILEPATH_KEY: infestor_configuration_0.reporter_filepath,
             },
             infestor_configuration_1.python_root: {
                 config.PYTHON_ROOT_KEY: infestor_configuration_1.python_root,
                 config.PROJECT_NAME_KEY: infestor_configuration_1.project_name,
                 config.RELATIVE_IMPORTS_KEY: infestor_configuration_1.relative_imports,
                 config.REPORTER_TOKEN_KEY: infestor_configuration_1.reporter_token,
+                config.REPORTER_FILEPATH_KEY: infestor_configuration_1.reporter_filepath,
             },
         }
         configuration, warnings, errors = config.parse_config(raw_config)
@@ -136,12 +148,14 @@ class TestParseConfig(unittest.TestCase):
             project_name="lol",
             relative_imports=False,
             reporter_token="335da960-2dc6-48b3-97a5-c23ac1495e7d",
+            reporter_filepath="report.py",
         )
         infestor_configuration_1 = config.InfestorConfiguration(
             python_root="./rofl",
             project_name="rofl",
             relative_imports=False,
             reporter_token="435da960-2dc6-48b3-97a5-c23ac1495e7d",
+            reporter_filepath="report.py",
         )
 
         raw_config = {
@@ -150,11 +164,13 @@ class TestParseConfig(unittest.TestCase):
                 config.PROJECT_NAME_KEY: infestor_configuration_0.project_name,
                 config.RELATIVE_IMPORTS_KEY: infestor_configuration_0.relative_imports,
                 config.REPORTER_TOKEN_KEY: infestor_configuration_0.reporter_token,
+                config.REPORTER_FILEPATH_KEY: infestor_configuration_0.reporter_filepath,
             },
             f"{infestor_configuration_1.python_root}/": {
                 config.PYTHON_ROOT_KEY: infestor_configuration_1.python_root,
                 config.PROJECT_NAME_KEY: infestor_configuration_1.project_name,
                 config.REPORTER_TOKEN_KEY: infestor_configuration_1.reporter_token,
+                config.REPORTER_FILEPATH_KEY: infestor_configuration_1.reporter_filepath,
             },
         }
         configuration, warnings, errors = config.parse_config(raw_config)

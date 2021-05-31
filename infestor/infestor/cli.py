@@ -4,7 +4,7 @@ Command line interface for the Humbug infestor.
 import argparse
 import os
 
-from . import config
+from . import config, generate
 
 
 def handle_init(args: argparse.Namespace) -> None:
@@ -54,6 +54,10 @@ def handle_token(args: argparse.Namespace) -> None:
         args.token,
     )
     print(config_object)
+
+
+def handle_generate_setup(args: argparse.Namespace) -> None:
+    generate.setup_reporter(args.repository, args.python_root, args.reporter_filepath)
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -112,6 +116,27 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "token", help="Reporting token generated from https://bugout.dev/account/teams"
     )
     token_parser.set_defaults(func=handle_token)
+
+    generate_parser = subcommands.add_parser("generate")
+    generate_parser.set_defaults(func=lambda _: generate_parser.print_help())
+
+    generate_subcommands = generate_parser.add_subparsers()
+
+    generate_setup_parser = generate_subcommands.add_parser("setup")
+    generate_setup_parser.add_argument(
+        "-P",
+        "--python-root",
+        required=True,
+        help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
+    )
+    generate_setup_parser.add_argument(
+        "-o",
+        "--reporter-filepath",
+        required=False,
+        default=None,
+        help="Path (relative to Python root) at which we should set up the reporter integration",
+    )
+    generate_setup_parser.set_defaults(func=handle_generate_setup)
 
     return parser
 

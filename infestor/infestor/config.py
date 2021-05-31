@@ -20,12 +20,15 @@ class InfestorConfiguration:
     project_name: str
     relative_imports: bool = False
     reporter_token: Optional[str] = None
+    # reporter_filepath should be a path relative to python_root
+    reporter_filepath: Optional[str] = None
 
 
 REPORTER_TOKEN_KEY = "reporter_token"
 PYTHON_ROOT_KEY = "python_root"
 PROJECT_NAME_KEY = "project_name"
 RELATIVE_IMPORTS_KEY = "relative_imports"
+REPORTER_FILEPATH_KEY = "reporter_filepath"
 
 
 class ConfigurationError(Exception):
@@ -74,12 +77,17 @@ def parse_config(
         if reporter_token is None:
             warn_messages.append(f"{key_path}: No reporter token found")
 
+        reporter_filepath: Optional[str] = subconfiguration.get(REPORTER_FILEPATH_KEY)
+        if reporter_filepath is None:
+            warn_messages.append(f"{key_path}: No reporter filepath found")
+
         if not error_messages:
             infestor_configuration = InfestorConfiguration(
                 python_root=python_root,
                 project_name=project_name,
                 relative_imports=relative_imports,
                 reporter_token=reporter_token,
+                reporter_filepath=reporter_filepath,
             )
             parsed_config[infestor_configuration.python_root] = infestor_configuration
 
