@@ -10,7 +10,7 @@ setup(
     name="humbug-infestor",
     version=INFESTOR_VERSION,
     packages=find_packages(),
-    install_requires=["atomicwrites", "bugout-locust", "humbug"],
+    install_requires=["atomicwrites", "humbug", "pygit2"],
     extras_require={
         "dev": ["black", "mypy", "wheel"],
         "distribute": ["setuptools", "twine", "wheel"],

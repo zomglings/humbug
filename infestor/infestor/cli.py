@@ -3,8 +3,11 @@ Command line interface for the Humbug infestor.
 """
 import argparse
 import os
+import sys
 
 from . import config, generate
+
+REPORT_TYPES = {"system", "error", "custom"}
 
 
 def handle_init(args: argparse.Namespace) -> None:
@@ -56,8 +59,15 @@ def handle_token(args: argparse.Namespace) -> None:
     print(config_object)
 
 
-def handle_generate_setup(args: argparse.Namespace) -> None:
-    generate.setup_reporter(args.repository, args.python_root, args.reporter_filepath)
+def handle_setup(args: argparse.Namespace) -> None:
+    generate.add_reporter(args.repository, args.python_root, args.reporter_filepath)
+
+
+def handle_add(args: argparse.Namespace) -> None:
+    if args.report_type == "system":
+        generate.add_system_report(args.repository, args.python_root, args.submodule)
+    else:
+        print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -117,26 +127,69 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     )
     token_parser.set_defaults(func=handle_token)
 
-    generate_parser = subcommands.add_parser("generate")
-    generate_parser.set_defaults(func=lambda _: generate_parser.print_help())
-
-    generate_subcommands = generate_parser.add_subparsers()
-
-    generate_setup_parser = generate_subcommands.add_parser("setup")
-    generate_setup_parser.add_argument(
+    setup_parser = subcommands.add_parser(
+        "setup",
+        description="Defines a reporter that can be used throughout a Python package to access reporting functionality",
+    )
+    setup_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
     )
-    generate_setup_parser.add_argument(
+    setup_parser.add_argument(
         "-o",
         "--reporter-filepath",
         required=False,
         default=None,
         help="Path (relative to Python root) at which we should set up the reporter integration",
     )
-    generate_setup_parser.set_defaults(func=handle_generate_setup)
+    setup_parser.set_defaults(func=handle_setup)
+
+    add_parser = subcommands.add_parser(
+        "add",
+        description="Adds reporting code to a given module",
+    )
+    add_parser.add_argument(
+        "report_type",
+        choices=REPORT_TYPES,
+        help="Type of report you would like to add to your code base",
+    )
+    add_parser.add_argument(
+        "-P",
+        "--python-root",
+        required=True,
+        help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
+    )
+    add_parser.add_argument(
+        "-m",
+        "--submodule",
+        default=None,
+        help="Path (relative to Python root) to submodule in which to fire off a system report",
+    )
+    add_parser.set_defaults(func=handle_add)
+
+    remove_parser = subcommands.add_parser(
+        "remove", description="Removes reporting code from a given module"
+    )
+    add_parser.add_argument(
+        "report_type",
+        choices=REPORT_TYPES,
+        help="Type of report you would like to add to your code base",
+    )
+    add_parser.add_argument(
+        "-P",
+        "--python-root",
+        required=True,
+        help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
+    )
+    add_parser.add_argument(
+        "-m",
+        "--submodule",
+        default=None,
+        help="Path (relative to Python root) to submodule in which to fire off a system report",
+    )
+    add_parser.set_defaults(func=handle_add)
 
     return parser
 
