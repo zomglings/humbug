@@ -42,12 +42,12 @@ def handle_config_init(args: argparse.Namespace) -> None:
         print("\t$ infestor token <token>\n")
 
 
-def handle_validate(args: argparse.Namespace) -> None:
+def handle_config_validate(args: argparse.Namespace) -> None:
     config_file = config.default_config_file(args.repository)
     config.load_config(config_file, print_warnings=True)
 
 
-def handle_token(args: argparse.Namespace) -> None:
+def handle_config_token(args: argparse.Namespace) -> None:
     config_file = config.default_config_file(args.repository)
     config_object = config.set_reporter_token(
         config_file,
@@ -59,7 +59,7 @@ def handle_token(args: argparse.Namespace) -> None:
     print(config_object)
 
 
-def handle_setup(args: argparse.Namespace) -> None:
+def handle_reporter_add(args: argparse.Namespace) -> None:
     manage.add_reporter(args.repository, args.python_root, args.reporter_filepath)
 
 
@@ -138,7 +138,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         default=current_working_directory,
         help=f"Path to git repository containing your code base (default: {current_working_directory})",
     )
-    config_validate_parser.set_defaults(func=handle_validate)
+    config_validate_parser.set_defaults(func=handle_config_validate)
 
     config_token_parser = config_subcommands.add_parser(
         "token", description="Set a Humbug token for an Infestor integration"
@@ -158,26 +158,37 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     config_token_parser.add_argument(
         "token", help="Reporting token generated from https://bugout.dev/account/teams"
     )
-    config_token_parser.set_defaults(func=handle_token)
+    config_token_parser.set_defaults(func=handle_config_token)
 
-    setup_parser = subcommands.add_parser(
-        "setup",
-        description="Defines a reporter that can be used throughout a Python package to access reporting functionality",
+    reporter_parser = subcommands.add_parser(
+        "reporter", description="Manage Humbug reporters in a code base"
     )
-    setup_parser.add_argument(
+    reporter_parser.set_defaults(func=lambda _: reporter_parser.print_help())
+    reporter_subcommands = reporter_parser.add_subparsers()
+
+    reporter_add_parser = reporter_subcommands.add_parser(
+        "add", description="Adds a Humbug reporter to a Python package"
+    )
+    reporter_add_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
+    )
+    reporter_add_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
     )
-    setup_parser.add_argument(
+    reporter_add_parser.add_argument(
         "-o",
         "--reporter-filepath",
         required=False,
-        default=None,
-        help="Path (relative to Python root) at which we should set up the reporter integration",
+        default=manage.DEFAULT_REPORTER_FILENAME,
+        help=f"Path (relative to Python root) at which we should set up the reporter integration (default: {manage.DEFAULT_REPORTER_FILENAME})",
     )
-    setup_parser.set_defaults(func=handle_setup)
+    reporter_add_parser.set_defaults(func=handle_reporter_add)
 
     add_parser = subcommands.add_parser(
         "add",
