@@ -5,7 +5,7 @@ import argparse
 import os
 import sys
 
-from . import config, generate
+from . import config, manage
 
 REPORT_TYPES = {"system", "error", "custom"}
 
@@ -60,12 +60,12 @@ def handle_token(args: argparse.Namespace) -> None:
 
 
 def handle_setup(args: argparse.Namespace) -> None:
-    generate.add_reporter(args.repository, args.python_root, args.reporter_filepath)
+    manage.add_reporter(args.repository, args.python_root, args.reporter_filepath)
 
 
 def handle_add(args: argparse.Namespace) -> None:
     if args.report_type == "system":
-        generate.add_system_report(args.repository, args.python_root, args.submodule)
+        manage.add_system_report(args.repository, args.python_root, args.submodule)
     else:
         print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
 

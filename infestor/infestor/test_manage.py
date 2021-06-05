@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import uuid
 
-from . import config, generate
+from . import config, manage
 
 
 class TestSetupReporter(unittest.TestCase):
@@ -48,7 +48,7 @@ class TestSetupReporter(unittest.TestCase):
             os.path.exists(os.path.join(self.repository, config.CONFIG_FILENAME))
         )
 
-        generate.add_reporter(self.repository, self.package_dir)
+        manage.add_reporter(self.repository, self.package_dir)
 
         infestor_json_path = config.default_config_file(self.repository)
         self.assertTrue(os.path.exists(infestor_json_path))
