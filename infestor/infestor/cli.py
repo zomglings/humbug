@@ -7,8 +7,6 @@ import sys
 
 from . import config, manage
 
-REPORT_TYPES = {"system", "error", "custom"}
-
 
 def handle_config_init(args: argparse.Namespace) -> None:
     config.initialize(
@@ -63,18 +61,20 @@ def handle_reporter_add(args: argparse.Namespace) -> None:
     manage.add_reporter(args.repository, args.python_root, args.reporter_filepath)
 
 
-def handle_add(args: argparse.Namespace) -> None:
-    if args.report_type == "system":
-        manage.add_system_report(args.repository, args.python_root, args.submodule)
-    else:
-        print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
+def handle_system_report_add(args: argparse.Namespace) -> None:
+    manage.add_system_report(args.repository, args.python_root, args.submodule)
 
 
-def handle_remove(args: argparse.Namespace) -> None:
-    if args.report_type == "system":
-        manage.remove_system_report(args.repository, args.python_root, args.submodule)
-    else:
-        print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
+def handle_system_report_list(args: argparse.Namespace) -> None:
+    results = manage.list_system_reports(args.repository, args.python_root)
+    for filepath, calls in results.items():
+        print(f"Lines in {filepath}:")
+        for report_call in calls:
+            print(f"\t- {report_call.lineno}")
+
+
+def handle_system_report_remove(args: argparse.Namespace) -> None:
+    manage.remove_system_report(args.repository, args.python_root, args.submodule)
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -190,50 +190,76 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     )
     reporter_add_parser.set_defaults(func=handle_reporter_add)
 
-    add_parser = subcommands.add_parser(
+    system_report_parser = subcommands.add_parser(
+        "system-report", description="Manage Humbug system reporting in a code base"
+    )
+    system_report_parser.set_defaults(func=lambda _: system_report_parser.print_help())
+    system_report_subcommands = system_report_parser.add_subparsers()
+
+    system_report_add_parser = system_report_subcommands.add_parser(
         "add",
         description="Adds reporting code to a given module",
     )
-    add_parser.add_argument(
-        "report_type",
-        choices=REPORT_TYPES,
-        help="Type of report you would like to add to your code base",
+    system_report_add_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
     )
-    add_parser.add_argument(
+    system_report_add_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
     )
-    add_parser.add_argument(
+    system_report_add_parser.add_argument(
         "-m",
         "--submodule",
         default=None,
         help="Path (relative to Python root) to submodule in which to fire off a system report",
     )
-    add_parser.set_defaults(func=handle_add)
+    system_report_add_parser.set_defaults(func=handle_system_report_add)
 
-    remove_parser = subcommands.add_parser(
+    system_report_list_parser = system_report_subcommands.add_parser(
+        "list",
+        description="Adds reporting code to a given module",
+    )
+    system_report_list_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
+    )
+    system_report_list_parser.add_argument(
+        "-P",
+        "--python-root",
+        required=True,
+        help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
+    )
+    system_report_list_parser.set_defaults(func=handle_system_report_list)
+
+    system_report_remove_parser = system_report_subcommands.add_parser(
         "remove", description="Removes reporting code from a given module"
     )
-    remove_parser.add_argument(
-        "report_type",
-        choices=REPORT_TYPES,
-        help="Type of report you would like to add to your code base",
+    system_report_remove_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
     )
-    remove_parser.add_argument(
+    system_report_remove_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
     )
-    remove_parser.add_argument(
+    system_report_remove_parser.add_argument(
         "-m",
         "--submodule",
         default=None,
         help="Path (relative to Python root) to submodule in which to fire off a system report",
     )
-    remove_parser.set_defaults(func=handle_remove)
+    system_report_remove_parser.set_defaults(func=handle_system_report_remove)
 
     return parser
 

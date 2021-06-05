@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import shutil
@@ -6,12 +7,15 @@ import tempfile
 import unittest
 import uuid
 
-from . import config, manage
+import pygit2
+
+from . import commit, config, manage
 
 
 class TestSetupReporter(unittest.TestCase):
     def setUp(self):
         self.repository = tempfile.mkdtemp()
+        pygit2.init_repository(self.repository, False)
 
         self.fixtures_dir = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -25,6 +29,17 @@ class TestSetupReporter(unittest.TestCase):
         self.package_dir = os.path.join(self.repository, package_basename)
         shutil.copytree(package_dir_fixture, self.package_dir)
 
+        package_files = [
+            os.path.relpath(python_file, start=self.repository)
+            for python_file in glob.glob(os.path.join(self.package_dir, "*.py"))
+        ]
+        commit.commit_files(
+            self.repository,
+            "refs/heads/master",
+            [script_basename, *package_files],
+            "initial commit",
+        )
+
         self.reporter_token = str(uuid.uuid4())
 
     def tearDown(self) -> None:
@@ -37,7 +52,7 @@ class TestSetupReporter(unittest.TestCase):
                 file=sys.stderr,
             )
 
-    def test_setup_for_package(self):
+    def test_add_reporter_for_package(self):
         config.initialize(
             self.repository,
             self.package_dir,
@@ -75,6 +90,15 @@ class TestSetupReporter(unittest.TestCase):
                 )
             )
         )
+
+    def test_list_system_reports_for_package_with_no_system_reports(self):
+        config.initialize(
+            self.repository, self.package_dir, os.path.basename(self.package_dir)
+        )
+        results = manage.list_system_reports(
+            self.repository, os.path.basename(self.package_dir)
+        )
+        self.assertDictEqual(results, {})
 
 
 if __name__ == "__main__":
