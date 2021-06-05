@@ -48,7 +48,7 @@ class TestSetupReporter(unittest.TestCase):
             os.path.exists(os.path.join(self.repository, config.CONFIG_FILENAME))
         )
 
-        generate.setup_reporter(self.repository, self.package_dir)
+        generate.add_reporter(self.repository, self.package_dir)
 
         infestor_json_path = config.default_config_file(self.repository)
         self.assertTrue(os.path.exists(infestor_json_path))
@@ -75,6 +75,7 @@ class TestSetupReporter(unittest.TestCase):
                 )
             )
         )
+
 
 if __name__ == "__main__":
     unittest.main()
