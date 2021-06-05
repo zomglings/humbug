@@ -10,7 +10,7 @@ from . import config, manage
 REPORT_TYPES = {"system", "error", "custom"}
 
 
-def handle_init(args: argparse.Namespace) -> None:
+def handle_config_init(args: argparse.Namespace) -> None:
     config.initialize(
         args.repository,
         args.python_root,
@@ -70,21 +70,38 @@ def handle_add(args: argparse.Namespace) -> None:
         print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
 
 
+def handle_remove(args: argparse.Namespace) -> None:
+    if args.report_type == "system":
+        manage.remove_system_report(args.repository, args.python_root, args.submodule)
+    else:
+        print(f"Unsupported report_type ({args.report_type})", file=sys.stderr)
+
+
 def generate_argument_parser() -> argparse.ArgumentParser:
     current_working_directory = os.getcwd()
 
-    parser = argparse.ArgumentParser(description="Humbug Infestor")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(
+        description="Infestor: Manage Humbug instrumentation of your Python code base"
+    )
+    parser.set_defaults(func=lambda _: parser.print_help())
+    subcommands = parser.add_subparsers()
+
+    config_parser = subcommands.add_parser(
+        "config", description="Manage infestor configuration"
+    )
+    config_parser.set_defaults(func=lambda _: config_parser.print_help())
+    config_subcommands = config_parser.add_subparsers()
+
+    config_init_parser = config_subcommands.add_parser(
+        "init", description="Initialize an Infestor integration in a project"
+    )
+    config_init_parser.add_argument(
         "-r",
         "--repository",
         default=current_working_directory,
         help=f"Path to git repository containing your code base (default: {current_working_directory})",
     )
-    parser.set_defaults(func=lambda _: parser.print_help())
-    subcommands = parser.add_subparsers()
-
-    init_parser = subcommands.add_parser("init")
-    init_parser.add_argument(
+    config_init_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
@@ -93,39 +110,55 @@ def generate_argument_parser() -> argparse.ArgumentParser:
             "a module, this will be the highest-level directory with an __init__.py file in it."
         ),
     )
-    init_parser.add_argument(
+    config_init_parser.add_argument(
         "-n",
         "--name",
         required=True,
         help="Name of project (to identify integration)",
     )
-    init_parser.add_argument(
+    config_init_parser.add_argument(
         "--relative-imports",
         action="store_true",
         help="Set this flags if infestor should add relative imports.",
     )
-    init_parser.add_argument(
+    config_init_parser.add_argument(
         "-t",
         "--reporter-token",
         default=None,
         help="Bugout reporter token. Get one by setting up an integration at https://bugout.dev/account/teams",
     )
-    init_parser.set_defaults(func=handle_init)
+    config_init_parser.set_defaults(func=handle_config_init)
 
-    validate_parser = subcommands.add_parser("validate")
-    validate_parser.set_defaults(func=handle_validate)
+    config_validate_parser = config_subcommands.add_parser(
+        "validate", description="Validate an Infestor configuration"
+    )
+    config_validate_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
+    )
+    config_validate_parser.set_defaults(func=handle_validate)
 
-    token_parser = subcommands.add_parser("token")
-    token_parser.add_argument(
+    config_token_parser = config_subcommands.add_parser(
+        "token", description="Set a Humbug token for an Infestor integration"
+    )
+    config_token_parser.add_argument(
+        "-r",
+        "--repository",
+        default=current_working_directory,
+        help=f"Path to git repository containing your code base (default: {current_working_directory})",
+    )
+    config_token_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to register a token for (this is the relevant key in infestor.json)",
     )
-    token_parser.add_argument(
+    config_token_parser.add_argument(
         "token", help="Reporting token generated from https://bugout.dev/account/teams"
     )
-    token_parser.set_defaults(func=handle_token)
+    config_token_parser.set_defaults(func=handle_token)
 
     setup_parser = subcommands.add_parser(
         "setup",
@@ -172,24 +205,24 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     remove_parser = subcommands.add_parser(
         "remove", description="Removes reporting code from a given module"
     )
-    add_parser.add_argument(
+    remove_parser.add_argument(
         "report_type",
         choices=REPORT_TYPES,
         help="Type of report you would like to add to your code base",
     )
-    add_parser.add_argument(
+    remove_parser.add_argument(
         "-P",
         "--python-root",
         required=True,
         help="Root directory for Python code/module you want to setup reporting for (this is the relevant key in infestor.json)",
     )
-    add_parser.add_argument(
+    remove_parser.add_argument(
         "-m",
         "--submodule",
         default=None,
         help="Path (relative to Python root) to submodule in which to fire off a system report",
     )
-    add_parser.set_defaults(func=handle_add)
+    remove_parser.set_defaults(func=handle_remove)
 
     return parser
 
